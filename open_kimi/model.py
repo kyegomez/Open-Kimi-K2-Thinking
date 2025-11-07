@@ -100,9 +100,16 @@ class KimiK2(nn.Module):
         self.output_head = nn.Sequential(nn.LayerNorm(dim), nn.Linear(dim, vocab_size))
 
     def forward(self, x) -> torch.Tensor:
+        seqlen = x.size(1)
+        
         x = self.embedding(x)
+        
+        mask = None
+        
+        if seqlen > 1:
+            mask = torch.full((seqlen, seqlen), float('-inf'), device=x.device).triu_(1)
 
         for block in self.blocks:     
-            x = block(x, mask=None)
+            x = block(x, mask=mask)
 
         return self.output_head(x)
