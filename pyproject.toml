@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "open-kimi"
-version = "0.1.2"
+version = "0.1.3"
 description = "An open source implementation of the Kimi K2 Reasoning model architecture in pure PyTorch"
 license = "MIT"
 authors = ["Kye Gomez <kye@swarms.world>"]

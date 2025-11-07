@@ -552,7 +552,7 @@ class KimiLinear(nn.Module):
             embedding_dim=dim,
         )
 
-        self.norm = nn.LayerNorm(dim)
+        self.norm = nn.RMSNorm(dim)
 
         self.blocks = nn.ModuleList(
             [
@@ -579,7 +579,7 @@ class KimiLinear(nn.Module):
 
         # Output head
         self.output_head = nn.Sequential(
-            nn.LayerNorm(dim),
+            nn.RMSNorm(dim),
             nn.Linear(dim, vocab_size),
             # nn.Softmax(dim=-1),
         )
