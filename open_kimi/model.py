@@ -5,6 +5,7 @@ from torch import nn
 
 from open_kimi.mla import MLA
 from open_kimi.moe import MoE
+from torch import Tensor
 
 
 class TransformerBlock(nn.Module):
@@ -17,7 +18,7 @@ class TransformerBlock(nn.Module):
         seq_len: int = 256052,
         lite_verison: bool = True,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.dim = dim
@@ -46,7 +47,7 @@ class TransformerBlock(nn.Module):
 
         self.norm = nn.LayerNorm(dim)
 
-    def forward(self, x: torch.Tensor, mask: Optional[Any]) -> torch.Tensor:
+    def forward(self, x: Tensor, mask: Optional[Any]) -> Tensor:
         original = x
 
         attended = self.attn((self.norm(x)))
@@ -70,7 +71,7 @@ class KimiK2(nn.Module):
         lite_verison: bool = True,
         vocab_size: int = 160000,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.dim = dim
@@ -81,7 +82,9 @@ class KimiK2(nn.Module):
         self.seq_len = seq_len
         self.lite_verison = lite_verison
 
-        self.embedding = nn.Embedding(num_embeddings=vocab_size, embedding_dim=dim)
+        self.embedding = nn.Embedding(
+            num_embeddings=vocab_size, embedding_dim=dim
+        )
 
         self.blocks = nn.ModuleList(
             [
@@ -97,19 +100,26 @@ class KimiK2(nn.Module):
             ]
         )
 
-        self.output_head = nn.Sequential(nn.LayerNorm(dim), nn.Linear(dim, vocab_size))
+        # Output head
+        self.output_head = nn.Sequential(
+            nn.LayerNorm(dim),
+            nn.Linear(dim, vocab_size),
+            nn.Softmax(dim=-1),
+        )
 
-    def forward(self, x) -> torch.Tensor:
+    def forward(self, x: Tensor) -> torch.Tensor:
         seqlen = x.size(1)
-        
-        x = self.embedding(x)
-        
-        mask = None
-        
-        if seqlen > 1:
-            mask = torch.full((seqlen, seqlen), float('-inf'), device=x.device).triu_(1)
 
-        for block in self.blocks:     
+        x = self.embedding(x)
+
+        mask = None
+
+        if seqlen > 1:
+            mask = torch.full(
+                (seqlen, seqlen), float("-inf"), device=x.device
+            ).triu_(1)
+
+        for block in self.blocks:
             x = block(x, mask=mask)
 
         return self.output_head(x)

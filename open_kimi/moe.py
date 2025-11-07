@@ -106,13 +106,19 @@ class MoEGate(nn.Module):
 
         # Adaptive bias for load balancing (auxiliary-loss-free)
         if use_adaptive_bias:
-            self.register_buffer("adaptive_bias", torch.zeros(n_experts))
-            self.register_buffer("expert_usage", torch.zeros(n_experts))
+            self.register_buffer(
+                "adaptive_bias", torch.zeros(n_experts)
+            )
+            self.register_buffer(
+                "expert_usage", torch.zeros(n_experts)
+            )
         else:
             self.register_buffer("adaptive_bias", None)
             self.register_buffer("expert_usage", None)
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, x: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Compute routing scores and select top-k experts.
 
@@ -127,13 +133,17 @@ class MoEGate(nn.Module):
         original_shape = x.shape
         if x.dim() == 3:
             batch_size, seq_len, dim = x.shape
-            x = x.view(-1, dim)  # Flatten to (batch_size * seq_len, dim)
+            x = x.view(
+                -1, dim
+            )  # Flatten to (batch_size * seq_len, dim)
         else:
             batch_size, dim = x.shape
             seq_len = 1
 
         # Compute routing scores: (batch_size * seq_len, n_experts)
-        scores = F.linear(x, self.gate_weight)  # (batch_size * seq_len, n_experts)
+        scores = F.linear(
+            x, self.gate_weight
+        )  # (batch_size * seq_len, n_experts)
 
         # Apply adaptive bias for load balancing
         if self.use_adaptive_bias and self.adaptive_bias is not None:
@@ -143,10 +153,14 @@ class MoEGate(nn.Module):
         probs = F.softmax(scores, dim=-1)
 
         # Select top-k experts
-        top_k_weights, top_k_indices = torch.topk(probs, self.top_k, dim=-1)
+        top_k_weights, top_k_indices = torch.topk(
+            probs, self.top_k, dim=-1
+        )
 
         # Normalize weights (optional, but helps with stability)
-        top_k_weights = top_k_weights / (top_k_weights.sum(dim=-1, keepdim=True) + 1e-8)
+        top_k_weights = top_k_weights / (
+            top_k_weights.sum(dim=-1, keepdim=True) + 1e-8
+        )
 
         # Update adaptive bias based on expert usage (auxiliary-loss-free load balancing)
         if self.use_adaptive_bias and self.training:
@@ -162,13 +176,21 @@ class MoEGate(nn.Module):
                 # If expert is underused, decrease its bias (makes it more likely to be selected)
                 target_usage = 1.0 / self.n_experts
                 usage_diff = usage - target_usage
-                self.adaptive_bias -= self.bias_update_rate * usage_diff
-                self.expert_usage = 0.9 * self.expert_usage + 0.1 * usage
+                self.adaptive_bias -= (
+                    self.bias_update_rate * usage_diff
+                )
+                self.expert_usage = (
+                    0.9 * self.expert_usage + 0.1 * usage
+                )
 
         # Reshape back if needed
         if len(original_shape) == 3:
-            top_k_weights = top_k_weights.view(batch_size, seq_len, self.top_k)
-            top_k_indices = top_k_indices.view(batch_size, seq_len, self.top_k)
+            top_k_weights = top_k_weights.view(
+                batch_size, seq_len, self.top_k
+            )
+            top_k_indices = top_k_indices.view(
+                batch_size, seq_len, self.top_k
+            )
 
         return top_k_weights, top_k_indices
 
@@ -236,7 +258,9 @@ class MoE(nn.Module):
         )
 
         # Shared expert (always active)
-        self.shared_expert = SharedExpert(dim, shared_expert_inter_dim)
+        self.shared_expert = SharedExpert(
+            dim, shared_expert_inter_dim
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -255,7 +279,9 @@ class MoE(nn.Module):
         x_flat = x.view(-1, dim)  # (batch_size * seq_len, dim)
 
         # Get routing weights and expert indices
-        weights, expert_indices = self.gate(x_flat)  # (batch_size * seq_len, top_k)
+        weights, expert_indices = self.gate(
+            x_flat
+        )  # (batch_size * seq_len, top_k)
 
         # Initialize output
         output = torch.zeros_like(x_flat)
@@ -263,7 +289,9 @@ class MoE(nn.Module):
         # Process each expert
         for expert_id in range(self.n_experts):
             # Find tokens routed to this expert
-            mask = expert_indices == expert_id  # (batch_size * seq_len, top_k)
+            mask = (
+                expert_indices == expert_id
+            )  # (batch_size * seq_len, top_k)
 
             if not mask.any():
                 continue
@@ -291,10 +319,14 @@ class MoE(nn.Module):
             aggregated_weights = torch.zeros(
                 len(unique_tokens), device=x.device, dtype=x.dtype
             )
-            aggregated_weights.scatter_add_(0, inverse_indices, token_weights)
+            aggregated_weights.scatter_add_(
+                0, inverse_indices, token_weights
+            )
 
             # Apply weights and accumulate
-            output[unique_tokens] += expert_output * aggregated_weights.unsqueeze(-1)
+            output[
+                unique_tokens
+            ] += expert_output * aggregated_weights.unsqueeze(-1)
 
         # Apply shared expert (always active for all tokens)
         shared_output = self.shared_expert(x_flat)

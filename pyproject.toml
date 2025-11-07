@@ -1,0 +1,87 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.poetry]
+name = "open-kimi"
+version = "0.1.0"
+description = "An open source implementation of the Kimi K2 Reasoning model architecture in pure PyTorch"
+license = "MIT"
+authors = ["Kye Gomez <kye@swarms.world>"]
+homepage = "https://github.com/kyegomez/Open-Kimi"
+documentation = "https://github.com/kyegomez/Open-Kimi"
+readme = "README.md"
+repository = "https://github.com/kyegomez/Open-Kimi"
+keywords = [
+    "artificial intelligence",
+    "deep learning",
+    "kimi",
+    "kimi-k2",
+    "k2-thinking",
+    "moonshot-ai",
+    "llms",
+    "transformers",
+    "pytorch",
+    "language-models",
+    "reasoning-models",
+    "mixture-of-experts",
+    "moe",
+    "mla",
+    "attention-mechanisms",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+torch = "*"
+einops = "*"
+
+
+
+
+[tool.poetry.group.lint.dependencies]
+black = ">=23.1,<26.0"
+ruff = ">=0.5.1,<0.14.3"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.1.1"
+
+[tool.poetry.group.dev.dependencies]
+black = "*"
+ruff = "*"
+pytest = "*"
+# pre-commit = "*"
+
+[tool.ruff]
+line-length = 70
+
+[tool.black]
+target-version = ["py38"]
+line-length = 70
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | docs
+)/
+'''
+

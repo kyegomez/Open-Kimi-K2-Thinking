@@ -6,6 +6,11 @@ This repository is a straightforward attempt to implement the base Kimi K2 Reaso
 
 [Link](https://huggingface.co/moonshotai/Kimi-K2-Thinking)
 
+## Install
+
+```bash
+pip3 install -U open-kimi
+```
 
 ## Example
 
@@ -30,9 +35,7 @@ if __name__ == "__main__":
     print(out)
 ```
 
-
 ## Full Example
-
 
 ```python
 from open_kimi.model import KimiK2
@@ -55,6 +58,38 @@ if __name__ == "__main__":
     print(out)
 ```
 
+## Kimi Linear
+
+![Kimi Linear Architecture](image/linear.png)
+
+Kimi Linear is a hybrid linear attention architecture that outperforms full attention under fair comparisons across various scenarios, including short-context, long-context, and reinforcement learning scaling regimes. At its core is **Kimi Delta Attention (KDA)**, an expressive linear attention module that extends Gated DeltaNet with a finer-grained gating mechanism, enabling more effective use of limited finite-state RNN memory. **Paper Link**: [Kimi Linear: An Expressive, Efficient Attention Architecture](https://huggingface.co/papers/2510.26692) (arXiv:2510.26692)
+
+### Usage Example
+
+```python
+import torch
+from open_kimi.kimi_linear import KimiLinear
+
+if __name__ == "__main__":
+    model = KimiLinear(
+        dim=512,
+        num_heads=8,
+        head_dim=64,
+        chunk_size=64,
+        n_experts=16,
+        n_activated=4,
+        kda_layers=2,
+        depth=2,
+        vocab_size=10000,
+        seq_len=1024,
+    )
+
+    x = torch.randint(0, 10000, (2, 1024))
+    out = model(x)
+    print(out)
+    print(out.shape)
+```
+
 ## Post Training
 
 On the model huggingface page, they mention they use Native INT4 Quantization in the post training phase. So I would say a good post training recipe would include:
@@ -63,8 +98,7 @@ On the model huggingface page, they mention they use Native INT4 Quantization in
 - MUON Optimizer
 - GRPO
 
-
-# Citation
+## Citation
 
 ```bibtex
 @misc{moonshot-kimi-k2,

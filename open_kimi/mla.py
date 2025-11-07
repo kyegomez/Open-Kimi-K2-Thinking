@@ -38,20 +38,28 @@ def precompute_freqs_cis(
             / (2 * math.log(base))
         )
 
-    def find_correction_range(low_rot, high_rot, dim, base, max_seq_len):
-        low = math.floor(find_correction_dim(low_rot, dim, base, max_seq_len))
-        high = math.ceil(find_correction_dim(high_rot, dim, base, max_seq_len))
+    def find_correction_range(
+        low_rot, high_rot, dim, base, max_seq_len
+    ):
+        low = math.floor(
+            find_correction_dim(low_rot, dim, base, max_seq_len)
+        )
+        high = math.ceil(
+            find_correction_dim(high_rot, dim, base, max_seq_len)
+        )
         return max(low, 0), min(high, dim - 1)
 
     def linear_ramp_factor(min_val, max_val, dim_size):
         if min_val == max_val:
             max_val += 0.001
-        linear_func = (torch.arange(dim_size, dtype=torch.float32) - min_val) / (
-            max_val - min_val
-        )
+        linear_func = (
+            torch.arange(dim_size, dtype=torch.float32) - min_val
+        ) / (max_val - min_val)
         return torch.clamp(linear_func, 0, 1)
 
-    freqs = 1.0 / (base ** (torch.arange(0, dim, 2, dtype=torch.float32) / dim))
+    freqs = 1.0 / (
+        base ** (torch.arange(0, dim, 2, dtype=torch.float32) / dim)
+    )
 
     # Apply YaRN scaling if sequence length is extended
     if original_seq_len is not None and seq_len > original_seq_len:
@@ -67,7 +75,9 @@ def precompute_freqs_cis(
     return freqs_cis
 
 
-def apply_rotary_emb(x: torch.Tensor, freqs_cis: torch.Tensor) -> torch.Tensor:
+def apply_rotary_emb(
+    x: torch.Tensor, freqs_cis: torch.Tensor
+) -> torch.Tensor:
     """
     Applies rotary positional embeddings to the input tensor.
 
@@ -80,7 +90,9 @@ def apply_rotary_emb(x: torch.Tensor, freqs_cis: torch.Tensor) -> torch.Tensor:
     """
     dtype = x.dtype
     # Reshape to complex numbers: (batch_size, seq_len, n_heads, head_dim) -> (batch_size, seq_len, n_heads, head_dim // 2) as complex
-    x_complex = torch.view_as_complex(x.float().view(*x.shape[:-1], -1, 2))
+    x_complex = torch.view_as_complex(
+        x.float().view(*x.shape[:-1], -1, 2)
+    )
     # Expand freqs_cis to match batch and head dimensions: (seq_len, head_dim // 2) -> (1, seq_len, 1, head_dim // 2)
     seq_len = freqs_cis.size(0)
     head_dim_half = freqs_cis.size(1)
@@ -150,17 +162,25 @@ class MLA(nn.Module):
 
         # Query projection (with optional LoRA)
         if q_lora_rank == 0:
-            self.wq = nn.Linear(dim, n_heads * self.qk_head_dim, bias=False)
+            self.wq = nn.Linear(
+                dim, n_heads * self.qk_head_dim, bias=False
+            )
         else:
             self.wq_a = nn.Linear(dim, q_lora_rank, bias=False)
             self.q_norm = RMSNorm(q_lora_rank)
-            self.wq_b = nn.Linear(q_lora_rank, n_heads * self.qk_head_dim, bias=False)
+            self.wq_b = nn.Linear(
+                q_lora_rank, n_heads * self.qk_head_dim, bias=False
+            )
 
         # Key-value projection (with LoRA)
-        self.wkv_a = nn.Linear(dim, kv_lora_rank + qk_rope_head_dim, bias=False)
+        self.wkv_a = nn.Linear(
+            dim, kv_lora_rank + qk_rope_head_dim, bias=False
+        )
         self.kv_norm = RMSNorm(kv_lora_rank)
         self.wkv_b = nn.Linear(
-            kv_lora_rank, n_heads * (qk_nope_head_dim + v_head_dim), bias=False
+            kv_lora_rank,
+            n_heads * (qk_nope_head_dim + v_head_dim),
+            bias=False,
         )
 
         # Output projection
@@ -168,9 +188,14 @@ class MLA(nn.Module):
 
         # Attention scaling
         self.softmax_scale = self.qk_head_dim**-0.5
-        if original_seq_len is not None and max_seq_len > original_seq_len:
+        if (
+            original_seq_len is not None
+            and max_seq_len > original_seq_len
+        ):
             mscale_factor = 0.1 * mscale * math.log(rope_factor) + 1.0
-            self.softmax_scale = self.softmax_scale * mscale_factor * mscale_factor
+            self.softmax_scale = (
+                self.softmax_scale * mscale_factor * mscale_factor
+            )
 
         # Precompute rotary embeddings
         self.register_buffer(
@@ -195,12 +220,17 @@ class MLA(nn.Module):
         )
         self.register_buffer(
             "pe_cache",
-            torch.zeros(max_batch_size, max_seq_len, qk_rope_head_dim),
+            torch.zeros(
+                max_batch_size, max_seq_len, qk_rope_head_dim
+            ),
             persistent=False,
         )
 
     def forward(
-        self, x: torch.Tensor, start_pos: int = 0, mask: Optional[torch.Tensor] = None
+        self,
+        x: torch.Tensor,
+        start_pos: int = 0,
+        mask: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """
         Forward pass for MLA.
@@ -234,7 +264,9 @@ class MLA(nn.Module):
 
         # Key-value projection
         kv = self.wkv_a(x)
-        kv, k_pe = torch.split(kv, [self.kv_lora_rank, self.qk_rope_head_dim], dim=-1)
+        kv, k_pe = torch.split(
+            kv, [self.kv_lora_rank, self.qk_rope_head_dim], dim=-1
+        )
 
         # Apply rotary embeddings to positional key
         k_pe = apply_rotary_emb(k_pe.unsqueeze(2), freqs_cis)
@@ -244,14 +276,24 @@ class MLA(nn.Module):
         self.pe_cache[:bsz, start_pos:end_pos] = k_pe.squeeze(2)
 
         # Compute attention scores using cached key-values
-        wkv_b = self.wkv_b.weight.view(self.n_heads, -1, self.kv_lora_rank)
+        wkv_b = self.wkv_b.weight.view(
+            self.n_heads, -1, self.kv_lora_rank
+        )
         q_nope_proj = torch.einsum(
-            "bshd,hdc->bshc", q_nope, wkv_b[:, : self.qk_nope_head_dim]
+            "bshd,hdc->bshc",
+            q_nope,
+            wkv_b[:, : self.qk_nope_head_dim],
         )
 
         scores = (
-            torch.einsum("bshc,btc->bsht", q_nope_proj, self.kv_cache[:bsz, :end_pos])
-            + torch.einsum("bshr,btr->bsht", q_pe, self.pe_cache[:bsz, :end_pos])
+            torch.einsum(
+                "bshc,btc->bsht",
+                q_nope_proj,
+                self.kv_cache[:bsz, :end_pos],
+            )
+            + torch.einsum(
+                "bshr,btr->bsht", q_pe, self.pe_cache[:bsz, :end_pos]
+            )
         ) * self.softmax_scale
 
         # Apply mask if provided
@@ -259,11 +301,17 @@ class MLA(nn.Module):
             scores = scores + mask.unsqueeze(1)
 
         # Softmax
-        scores = scores.softmax(dim=-1, dtype=torch.float32).type_as(x)
+        scores = scores.softmax(dim=-1, dtype=torch.float32).type_as(
+            x
+        )
 
         # Compute output
-        x = torch.einsum("bsht,btc->bshc", scores, self.kv_cache[:bsz, :end_pos])
-        x = torch.einsum("bshc,hdc->bshd", x, wkv_b[:, -self.v_head_dim :])
+        x = torch.einsum(
+            "bsht,btc->bshc", scores, self.kv_cache[:bsz, :end_pos]
+        )
+        x = torch.einsum(
+            "bshc,hdc->bshd", x, wkv_b[:, -self.v_head_dim :]
+        )
 
         # Output projection
         x = self.wo(x.flatten(2))
