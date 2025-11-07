@@ -1,10 +1,9 @@
-# Open-Kimi-K2-Thinking
+# Open-Kimi
 
-![Architecture kimi k2](image/arch.png)
 
-This repository is a straightforward attempt to implement the base Kimi K2 Reasoning model architecture in pure PyTorch as simply as possible.
+This repository originally started as a playful attempt to implement the Kimi K2 Reasoning Base Model, which was released a couple of days ago [here](https://huggingface.co/moonshotai/Kimi-K2-Thinking). After that, I started reading the Kimi Linear paper and decided to implement that as well. As a result, this repository has become a one-stop shop for PyTorch implementations of the Kimi models. If you find any issues, bugs, or opportunities for improvement, please submit an issue or, ideally, a pull request so we can make these great model architectures from Kimi more accessible and easier to use.
 
-[Link](https://huggingface.co/moonshotai/Kimi-K2-Thinking)
+Note: This is still a work in progress and a community-led effort. 
 
 ## Install
 
@@ -14,6 +13,10 @@ pip3 install -U open-kimi
 
 
 ## Kimi K2 Reasoning
+
+![Architecture kimi k2](image/arch.png)
+
+[Huggingface page here](https://huggingface.co/moonshotai/Kimi-K2-Thinking).
 
 ### Example
 
