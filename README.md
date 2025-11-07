@@ -14,7 +14,7 @@ pip3 install -U open-kimi
 
 ## Kimi K2 Reasoning
 
-![Architecture kimi k2](image/arch.png)
+![Architecture kimi k2](https://x.com/askOkara/status/1986758777979498886/photo/1)
 
 [Huggingface page here](https://huggingface.co/moonshotai/Kimi-K2-Thinking).
 
